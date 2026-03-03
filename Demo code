@@ -1,0 +1,114 @@
+#include <Servo.h>
+#include <WiFiS3.h>
+#include <WiFiUdp.h>
+#include <NTPClient.h>
+#include "Ultrasonic.h"
+
+Servo myservo;
+
+char ssid[] = "IoTtest";     //name of wifi
+char pass[] = "IoTtestTeamA";    //password
+
+WiFiUDP ntpUDP;
+
+NTPClient timeClient(ntpUDP, "pool.ntp.org", 0, 60000); //for using PC time
+
+int pos = 0; //put servo in position 0 
+
+Ultrasonic ultrasonic(7); //connect sonar to D7 
+
+const int buttonPin = 6;
+
+void setup() {
+
+  Serial.begin(9600);
+
+  myservo.attach(5); //connect servo motor to D5
+  myservo.write(0);
+
+  Serial.println("Connecting to WiFi...");
+
+  WiFi.begin(ssid, pass);
+
+  while (WiFi.status() != WL_CONNECTED) { //printinc Connecting if it can`t connect to wifi
+    delay(1000);
+    Serial.println("Connecting...");
+  }
+
+  Serial.println("WiFi connected");
+
+  pinMode(buttonPin, INPUT_PULLUP);
+
+  timeClient.begin();
+}
+
+void loop() {
+
+  //writing distance 
+  long RangeInInches;
+  long RangeInCentimeters;
+  RangeInCentimeters = ultrasonic.MeasureInCentimeters(); // two measurements should keep an interval
+  Serial.print(RangeInCentimeters);//0~400cm
+  Serial.println(" cm");
+  delay(250);
+
+  timeClient.update();
+
+  int hourNow = timeClient.getHours(); //taking hours and minutes from PC
+  int minuteNow = timeClient.getMinutes();
+
+  Serial.print("Time: ");
+  Serial.print(hourNow);
+  Serial.print(":");
+
+  if(minuteNow < 10) Serial.print("0");
+  Serial.println(minuteNow);
+
+
+  if(hourNow == 16 && minuteNow == 37) //feed cat at 17.16, you can change time here 
+  {
+
+    for (pos = 0; pos <= 180; pos++)
+    {
+      myservo.write(pos);
+      delay(15);
+    }
+
+    for (pos = 180; pos >= 0; pos--)
+    {
+      myservo.write(pos);
+      delay(15);
+    }
+    delay(60000);
+  }
+
+  if(RangeInCentimeters < 50) //feed when distance less than 50sm
+  {
+    for (pos = 0; pos <= 180; pos++)
+    {
+      myservo.write(pos);
+      delay(15);
+    }
+
+    for (pos = 180; pos >= 0; pos--)
+    {
+      myservo.write(pos);
+      delay(15);
+    }
+  }
+  if(digitalRead(buttonPin) == HIGH) 
+  {
+    for (pos = 0; pos <= 180; pos++)
+    {
+      myservo.write(pos);
+      delay(15);
+    }
+
+    for (pos = 180; pos >= 0; pos--)
+    {
+      myservo.write(pos);
+      delay(15);
+    }
+  }
+
+}
