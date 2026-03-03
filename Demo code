@@ -4,6 +4,9 @@
 #include <NTPClient.h>
 #include "Ultrasonic.h"
 
+const int hoursToFid = 16;
+const int minutesToFid = 0;
+
 Servo myservo;
 
 char ssid[] = "IoTtest";     //name of wifi
@@ -19,7 +22,20 @@ Ultrasonic ultrasonic(7); //connect sonar to D7
 
 const int buttonPin = 6;
 
+#include "rgb_lcd.h"
+
+rgb_lcd lcd;
+
+const int colorR = 255;
+const int colorG = 0;
+const int colorB = 0;
+
 void setup() {
+
+  // set up the LCD's number of columns and rows:
+  lcd.begin(16, 2);
+
+  lcd.setRGB(colorR, colorG, colorB);
 
   Serial.begin(9600);
 
@@ -27,6 +43,9 @@ void setup() {
   myservo.write(0);
 
   Serial.println("Connecting to WiFi...");
+  lcd.print("Connecting...");
+  delay(1000);
+  lcd.clear();
 
   WiFi.begin(ssid, pass);
 
@@ -36,6 +55,9 @@ void setup() {
   }
 
   Serial.println("WiFi connected");
+  lcd.print("Connected!");
+  delay(1000);
+  lcd.clear();
 
   pinMode(buttonPin, INPUT_PULLUP);
 
@@ -44,6 +66,11 @@ void setup() {
 
 void loop() {
 
+  lcd.print("Time to feed: ");
+  lcd.setCursor(0, 1);
+  lcd.print(hoursToFid);
+  lcd.print(":");
+  lcd.print(minutesToFid);
   //writing distance 
   long RangeInInches;
   long RangeInCentimeters;
@@ -65,8 +92,10 @@ void loop() {
   Serial.println(minuteNow);
 
 
-  if(hourNow == 16 && minuteNow == 37) //feed cat at 17.16, you can change time here 
+  if(hourNow == hoursToFid && minuteNow == minutesToFid) //feed cat at 17.16, you can change time here 
   {
+    lcd.clear();
+    lcd.print("Feedding");
 
     for (pos = 0; pos <= 180; pos++)
     {
@@ -84,6 +113,10 @@ void loop() {
 
   if(RangeInCentimeters < 50) //feed when distance less than 50sm
   {
+    lcd.clear();
+    lcd.setCursor(0, 1);
+    lcd.print("Cat is nearby");
+
     for (pos = 0; pos <= 180; pos++)
     {
       myservo.write(pos);
@@ -98,6 +131,9 @@ void loop() {
   }
   if(digitalRead(buttonPin) == HIGH) 
   {
+    lcd.clear();
+    lcd.setCursor(1, 0);
+    lcd.print("Feedding");
     for (pos = 0; pos <= 180; pos++)
     {
       myservo.write(pos);
@@ -110,5 +146,8 @@ void loop() {
       delay(15);
     }
   }
+
+  lcd.clear();
+
 
 }
